@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -11,7 +14,6 @@ const monitoramentos = 3
 const dalay = 5
 
 func main() {
-
 	exibeIntroducao()
 	for {
 		exibreMenu()
@@ -61,8 +63,7 @@ func exibreMenu() {
 
 func iniciarMonitoramento() {
 	fmt.Println("monitorando")
-	sites := []string{"https://random-status-code.herokuapp.com/",
-		"https://www.alura.com.br", "https://www.caelum.com.br"}
+	sites := leSitesDoArquivo()
 
 	for i := 0; i < monitoramentos; i++ {
 		for i, site := range sites {
@@ -79,11 +80,37 @@ func iniciarMonitoramento() {
 }
 
 func testaSite(site string) {
-	resp, _ := http.Get(site)
+	resp, err := http.Get(site)
+	if err != nil {
+		fmt.Println("ocorreu um erro:", err)
+	}
 	if resp.StatusCode == 200 {
 		fmt.Println("o site", site, "foi carregado com sucesso")
 
 	} else {
 		fmt.Println("o site", site, "está com problemas", resp.StatusCode)
 	}
+}
+
+// <nil> é igual a null
+func leSitesDoArquivo() []string {
+	var sites []string
+	arquivo, err := os.Open("sites.txt")
+	if err != nil {
+		fmt.Println("ocorreu um erro", err)
+	}
+
+	leitor := bufio.NewReader(arquivo)
+	for {
+		linha, err := leitor.ReadString('\n') //no caso ele so ler uma linha do arquivo
+		linha = strings.TrimSpace(linha)      //para tirar o qubra linha do arquivo
+		sites = append(sites, linha)
+		if err == io.EOF {
+			break
+		}
+
+	}
+	arquivo.Close()
+	return sites
+
 }
