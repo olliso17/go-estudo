@@ -4,8 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -23,7 +25,7 @@ func main() {
 		case 1:
 			iniciarMonitoramento()
 		case 2:
-			fmt.Println("exibindo logs")
+			imprimeLogs()
 		case 3:
 			fmt.Println("saindo do programa")
 			os.Exit(0)
@@ -71,7 +73,6 @@ func iniciarMonitoramento() {
 			//quando eu tiver uma função que retorna dois valores vc pode so retornar um com exemplo abaixo usando
 			//resp,_:= ao inves de resp, err
 			testaSite(site)
-
 		}
 		time.Sleep(dalay * time.Minute)
 	}
@@ -86,9 +87,11 @@ func testaSite(site string) {
 	}
 	if resp.StatusCode == 200 {
 		fmt.Println("o site", site, "foi carregado com sucesso")
-
+		registraLog(site, true)
 	} else {
 		fmt.Println("o site", site, "está com problemas", resp.StatusCode)
+		registraLog(site, false)
+
 	}
 }
 
@@ -113,4 +116,26 @@ func leSitesDoArquivo() []string {
 	arquivo.Close()
 	return sites
 
+}
+
+func registraLog(site string, status bool) {
+
+	arquivo, err := os.OpenFile("log.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666) //ler e criar arquivo com permissões
+	if err != nil {
+		fmt.Println("ocorreu um erro", err)
+	}
+
+	arquivo.WriteString(time.Now().Format("02/01/2006 15:04:05") + "-" + site + "- online:" + strconv.FormatBool(status) + "\n") //passando uma string com tempo, site, formatando o bool em string e dando espaço
+
+	arquivo.Close()
+}
+
+func imprimeLogs() {
+	arquivo, err := ioutil.ReadFile("log.txt")
+
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(string(arquivo))
+	//não precisa abrir e fechar
 }
